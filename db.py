@@ -75,9 +75,15 @@ class DatabaseManager:
         self.connect()
     
     def connect(self, db_url=None):
-        """Connect to the database using SQLite"""
+        """Connect to the database using PostgreSQL or SQLite fallback"""
         if db_url:
             self.db_url = db_url
+        else:
+            # Try PostgreSQL from environment first
+            import os
+            postgres_url = os.environ.get('DATABASE_URL')
+            if postgres_url:
+                self.db_url = postgres_url
         
         try:
             # Create SQLAlchemy engine
@@ -94,7 +100,10 @@ class DatabaseManager:
                 conn.execute(select(1))
                 self.connected = True
             
-            print(f"Connected to local SQLite database at: {DB_PATH}")
+            if 'postgresql' in self.db_url:
+                print("Connected to PostgreSQL cloud database")
+            else:
+                print(f"Connected to local SQLite database at: {DB_PATH}")
             return True
         except Exception as e:
             print(f"Database connection error: {e}")
