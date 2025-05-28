@@ -20,9 +20,26 @@ def check_credentials(username, password):
     """
     Check if the provided username and password are valid
     """
-    # For development, accept admin/admin
+    # Admin access only for super secure analysis features
     if username == "admin" and password == "admin":
-        return True
+        return "admin"
+    
+    # Demo client for testing (replace with real database later)
+    if username == "johndoe_1990" and password == "demo123":
+        return "client"
+    
+    # Check against client database for real client credentials
+    try:
+        db_manager = DatabaseManager()
+        db_manager.connect()
+        
+        if db_manager.connected:
+            client_report = db_manager.get_client_report(username, password)
+            if client_report:
+                return "client"
+    except Exception as e:
+        print(f"Database authentication error: {e}")
+    
     return False
 
 def login_page():
@@ -44,9 +61,11 @@ def login_page():
         password = st.text_input("Password", type="password", placeholder="Enter your password")
         
         if st.button("Login", use_container_width=True):
-            if check_credentials(username, password):
+            auth_result = check_credentials(username, password)
+            if auth_result:
                 st.session_state.authenticated = True
                 st.session_state.username = username
+                st.session_state.user_role = auth_result  # Store role (admin/client)
                 st.rerun()
             else:
                 st.error("Invalid username or password. Please try again.")
@@ -59,34 +78,54 @@ def render_navigation():
     Render the navigation bar
     """
     st.markdown("""
-    <div style='background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); padding: 1rem; margin-bottom: 2rem; border-radius: 0.5rem;'>
-        <h2 style='color: white; margin: 0; text-align: center;'>🔬 Pinnertest Client Portal</h2>
-        <p style='color: rgba(255,255,255,0.9); margin: 0; text-align: center;'>Welcome back! Access your personalized allergen reports below.</p>
+    <div style='background: white; padding: 1rem; margin-bottom: 2rem; border-radius: 0.5rem; border: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);'>
+        <h2 style='color: #333; margin: 0; text-align: center;'>🔬 Pinnertest Client Portal</h2>
+        <p style='color: #666; margin: 0; text-align: center;'>Welcome back! Access your personalized allergen reports below.</p>
     </div>
     """, unsafe_allow_html=True)
     
-    col1, col2, col3, col4 = st.columns(4)
+    # Show different navigation based on user role
+    user_role = st.session_state.get('user_role', 'client')
     
-    with col1:
-        if st.button("📊 Reports", use_container_width=True):
-            st.session_state.current_page = "reports"
-            st.rerun()
-    
-    with col2:
-        if st.button("📁 Archive", use_container_width=True):
-            st.session_state.current_page = "archive"
-            st.rerun()
+    if user_role == "admin":
+        # Admin gets access to all features
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            if st.button("📊 Reports", use_container_width=True):
+                st.session_state.current_page = "reports"
+                st.rerun()
+        
+        with col2:
+            if st.button("📁 Archive", use_container_width=True):
+                st.session_state.current_page = "archive"
+                st.rerun()
+                
+        with col3:
+            if st.button("🎨 Portal Design", use_container_width=True):
+                st.session_state.current_page = "portal"
+                st.rerun()
+        
+        with col4:
+            if st.button("🚪 Logout", use_container_width=True):
+                st.session_state.authenticated = False
+                st.session_state.current_page = "reports"
+                st.rerun()
+    else:
+        # Regular clients only see their reports (NO analysis access)
+        col1, col2, col3 = st.columns([2, 2, 1])
+        
+        with col1:
+            st.markdown("**Your Personalized Allergen Report**")
+        
+        with col2:
+            st.markdown("*Secure client access only*")
             
-    with col3:
-        if st.button("🎨 Portal Design", use_container_width=True):
-            st.session_state.current_page = "portal"
-            st.rerun()
-    
-    with col4:
-        if st.button("🚪 Logout", use_container_width=True):
-            st.session_state.authenticated = False
-            st.session_state.current_page = "reports"
-            st.rerun()
+        with col3:
+            if st.button("🚪 Logout", use_container_width=True):
+                st.session_state.authenticated = False
+                st.session_state.current_page = "reports"
+                st.rerun()
 
 def main():
     """
@@ -99,35 +138,37 @@ def main():
         initial_sidebar_state="collapsed"
     )
     
-    # Custom CSS for professional styling
+    # Custom CSS for clean white theme
     st.markdown("""
     <style>
     .main-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: white;
         padding: 2rem;
         margin: -1rem -1rem 2rem -1rem;
-        color: white;
+        color: #333;
         text-align: center;
+        border-bottom: 2px solid #f0f0f0;
     }
     .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
+        background: white;
+        color: #333;
+        border: 2px solid #e0e0e0;
         border-radius: 0.5rem;
         padding: 0.5rem 1rem;
         font-weight: 600;
     }
     .stButton > button:hover {
-        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        background: #f8f9fa;
+        border-color: #ccc;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .metric-card {
         background: white;
         padding: 1.5rem;
         border-radius: 0.5rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: 4px solid #667eea;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid #e0e0e0;
     }
     </style>
     """, unsafe_allow_html=True)
