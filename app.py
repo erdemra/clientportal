@@ -1,17 +1,9 @@
 import streamlit as st
-import numpy as np
 import pandas as pd
-from PIL import Image
-import io
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from matplotlib.colors import Normalize
-from matplotlib.patches import Circle, Rectangle
 import os
 import json
 import base64
 from datetime import datetime
-import cv2
 
 # Database functionality
 import db
@@ -150,25 +142,28 @@ def main():
     
     # Route to appropriate page
     if st.session_state.current_page == "reports":
-        # Import and render the simplified report page
-        from simple_report_page import render_reports_page
-        
-        # Display the reports page
-        render_reports_page()
+        try:
+            # Import and render the simplified report page
+            from simple_report_page import render_reports_page
+            render_reports_page()
+        except ImportError:
+            st.error("Report functionality not available in this deployment.")
 
     elif st.session_state.current_page == "archive":
-        # Import and render the report archive page
-        from report_archive_page import render_report_archive_page
-        
-        # Display the report archive page
-        render_report_archive_page()
+        try:
+            # Import and render the report archive page
+            from report_archive_page import render_report_archive_page
+            render_report_archive_page()
+        except ImportError:
+            st.error("Archive functionality not available in this deployment.")
 
     elif st.session_state.current_page == "portal":
-        # Import and render the client portal design page
-        from client_portal_design_page import render_client_portal_design_page
-        
-        # Display the client portal design page
-        render_client_portal_design_page()
+        try:
+            # Import and render the client portal design page
+            from client_portal_design_page import render_client_portal_design_page
+            render_client_portal_design_page()
+        except ImportError:
+            st.error("Portal design functionality not available in this deployment.")
 
 if __name__ == "__main__":
     main()
